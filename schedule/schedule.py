@@ -69,6 +69,18 @@ def add_schedule(date):
     return make_response(jsonify(new_schedule), 201)      
 
 
+# Route 5 : Supprimer une séance
+# http://localhost:3002/schedule/20151130
+# git restore schedule/data/times.json
+@app.route("/schedule/<date>", methods=['DELETE'])
+def supprimer_seance(date):
+    for s in schedule:
+        if str(s["date"]) == str(date):
+            schedule.remove(s)
+            write(schedule)
+            return make_response(jsonify(s), 200)
+    return make_response(jsonify({"error": "séance non trouvée"}), 404)
+
 
 if __name__ == "__main__":
    print("Server running in port %s"%(PORT))
