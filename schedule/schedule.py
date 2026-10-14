@@ -25,6 +25,17 @@ def home ():
 def seances ():
    res = make_response(jsonify(schedule), 200)
    return res
+
+
+# Route 3 : Films à une date spécifique
+# http://localhost:3002/schedule
+@ app.route ("/schedule/<date>", methods=['GET'])
+def films_date (date):
+   for s in schedule:
+      if str(s["date"]) == str (date):
+         return make_response(jsonify(s),200)
+   return make_response (jsonify ({"error" : "aucun film à cette date"}), 404)
+
    
 
 if __name__ == "__main__":
