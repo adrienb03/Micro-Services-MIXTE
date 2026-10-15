@@ -25,6 +25,14 @@ def home ():
    return make_response("<h1 style='color:blue'>Welcome to the User service!</h1>", 200)
 
 
+# Route 2 : Liste des utilisateurs
+# http://localhost:3004/users
+@app.route("/users", methods=['GET'])
+def get_users ():
+   res = make_response(jsonify(users), 200)
+   return res
+
+
 
 
 
