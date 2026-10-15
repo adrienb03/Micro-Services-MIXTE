@@ -1,16 +1,23 @@
-FROM python
-# can you find a lighter image?
+# Image python
+FROM python:3.11-slim
 
+# Dossier de travail
 WORKDIR /app
 
-# copy the requirements file in the workdir
-RUN
+# Dépendances
+COPY requirements.txt /app
 
-# install the Python requirements
-RUN
+# Installation des dépendances
+RUN pip install --no-cache-dir -r requirements.txt
 
-# copy the app files and directories
-RUN
+# Code source
+COPY movie.py /app
 
-# start movie.py when the container is started
-CMD 
+# Fichiers de données
+COPY data/ /app/data/
+
+# Port
+EXPOSE 3002
+
+# Commande d'exécution
+CMD ["python", "-u", "movie.py"]
