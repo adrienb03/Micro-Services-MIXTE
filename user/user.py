@@ -33,8 +33,15 @@ def get_users ():
    return res
 
 
-
-
+# Route 3 : Utilisateur par son ID
+# http://localhost:3004/users/chris_rivers
+# http://localhost:3004/users/0
+@app.route("/users/<id>", methods=['GET'])
+def get_user_by_id (id):
+   for user in users:
+      if str(user["id"]) == str(id):
+         return make_response(jsonify(user), 200)
+   return make_response(jsonify({"error" : "no user found for this id"}), 404)
 
 
 
