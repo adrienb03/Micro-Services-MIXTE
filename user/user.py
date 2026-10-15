@@ -71,6 +71,19 @@ def add_user():
     return make_response(jsonify(req), 201)
 
 
+# Route 5 : Supprimer un utilisateur
+# http://localhost:3004/users/john_doe
+# git restore user/data/users.json
+@app.route("/users/<id>", methods=['DELETE'])
+def delete_user(id):
+   for user in users:
+      if str(user["id"]) == str(id):
+         users.remove(user)
+         write(users)
+         return make_response(jsonify({"message": "user deleted"}), 200)
+   return make_response(jsonify({"error": "no user found for this id"}), 404)
+
+
 # Point d'entrée
 if __name__ == "__main__":
    print("Server running in port %s"%(PORT))
