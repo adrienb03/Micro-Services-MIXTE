@@ -1,10 +1,8 @@
 # IMPLÉMENTATION EN REST
 
 # Imports 
-from flask import Flask, render_template, request, jsonify, make_response
-import requests
+from flask import Flask, request, jsonify, make_response
 import json
-from werkzeug.exceptions import NotFound
 
 # Création de l'application Flask
 app = Flask(__name__)
@@ -59,7 +57,7 @@ def get_user_by_id (id):
 def add_user():
     # Récupération et vérification requête
     req = request.get_json()
-    if not req or "id" not in req:
+    if not req or "id" not in req or "name" not in req:
         return make_response(jsonify({"error": "invalid request body"}), 400)
     # Vérification de l'existence de l'utilisateur
     for user in users:
