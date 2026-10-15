@@ -17,6 +17,13 @@ HOST = '0.0.0.0'
 with open('{}/data/users.json'.format("."), "r") as jsf:
    users = json.load(jsf)["users"]
 
+# Écriture fichier json user
+def write(users):
+    with open('{}/data/users.json'.format("."), 'w') as f:
+        full = {}
+        full['users'] = users
+        json.dump(full, f)       
+
 
 # Route 1 : Acceuil 
 # http://localhost:3004/
@@ -44,6 +51,24 @@ def get_user_by_id (id):
    return make_response(jsonify({"error" : "no user found for this id"}), 404)
 
 
+# Route 4 : Ajouter un utilisateur
+# http://localhost:3004/users
+# {"id": "john_doe", "name": "John Doe", "last_active": 1360031010}
+# git restore user/data/users.json
+@app.route("/users", methods=['POST'])
+def add_user():
+    # Récupération et vérification requête
+    req = request.get_json()
+    if not req or "id" not in req:
+        return make_response(jsonify({"error": "invalid request body"}), 400)
+    # Vérification de l'existence de l'utilisateur
+    for user in users:
+        if str(user["id"]) == str(req["id"]):
+            return make_response(jsonify({"error": "user already exists"}), 409)
+    # Ajout de l'utilisateur à la liste
+    users.append(req)
+    write(users)
+    return make_response(jsonify(req), 201)
 
 
 # Point d'entrée
