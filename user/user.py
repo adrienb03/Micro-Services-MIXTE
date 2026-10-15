@@ -18,6 +18,12 @@ with open('{}/data/users.json'.format("."), "r") as jsf:
    users = json.load(jsf)["users"]
 
 
+# Route 1 : Acceuil 
+# http://localhost:3004/
+@app.route("/", methods=['GET'])
+def home ():
+   return make_response("<h1 style='color:blue'>Welcome to the User service!</h1>", 200)
+
 
 
 
