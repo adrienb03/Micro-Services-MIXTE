@@ -1,6 +1,23 @@
-FROM python:3.8-alpine
+# Image python
+FROM python:3.11-slim
+
+# Dossier de travail
 WORKDIR /app
+
+# Dépendances
 COPY requirements.txt /app
-RUN pip install -r requirements.txt
-ADD . /app/
-CMD ["python","-u","booking.py"]
+
+# Installation des dépendances
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Code source
+COPY booking.py /app
+
+# Fichiers de données
+COPY data/ /app/data/
+
+# Port
+EXPOSE 3002
+
+# Commande d'exécution
+CMD ["python", "-u", "booking.py"]
