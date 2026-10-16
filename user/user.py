@@ -40,7 +40,6 @@ def get_users ():
 
 # Route 3 : Utilisateur par son ID
 # http://localhost:3004/users/chris_rivers
-# http://localhost:3004/users/0
 @app.route("/users/<id>", methods=['GET'])
 def get_user_by_id (id):
    for user in users:
@@ -50,7 +49,7 @@ def get_user_by_id (id):
 
 
 # Route 4 : Ajouter un utilisateur
-# http://localhost:3004/users
+# POST http://localhost:3004/users
 # {"id": "john_doe", "name": "John Doe", "last_active": 1360031010}
 # git restore user/data/users.json
 @app.route("/users", methods=['POST'])
@@ -70,7 +69,7 @@ def add_user():
 
 
 # Route 5 : Supprimer un utilisateur
-# http://localhost:3004/users/john_doe
+# DELETE http://localhost:3004/users/john_doe
 # git restore user/data/users.json
 @app.route("/users/<id>", methods=['DELETE'])
 def delete_user(id):
