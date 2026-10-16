@@ -12,6 +12,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Code source
 COPY movie.py /app
+COPY resolvers.py /app
+COPY movie.graphql /app
 
 # Fichiers de données
 COPY data/ /app/data/
