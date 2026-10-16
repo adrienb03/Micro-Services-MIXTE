@@ -3,6 +3,7 @@
 # Imports
 from flask import Flask, request, jsonify, make_response
 import json
+import requests
 
 # Création de l'application Flask
 app = Flask(__name__)
@@ -22,6 +23,13 @@ def write(schedule):
         full['schedule'] = schedule
         json.dump(full, f)
 
+# Récupération des films
+def fetch_movies():
+    movies_response = requests.post("http://movie:3001/graphql",
+                                    json={"query": "{ get_movies { id title director rating } }"},
+                                    timeout=5)
+    movies = movies_response.json()
+    return movies['data']['get_movies']
 
 # Route 1 : Acceuil 
 # http://localhost:3002/
@@ -40,7 +48,6 @@ def get_schedule ():
 
 # Route 3 : Films à une date spécifique
 # http://localhost:3002/schedule/20151130
-# http://localhost:3002/schedule/0
 @app.route("/schedule/<date>", methods=['GET'])
 def get_schedule_by_date (date):
    for s in schedule:
@@ -50,7 +57,7 @@ def get_schedule_by_date (date):
 
 
 # Route 4 : Ajouter une séance
-# http://localhost:3002/schedule/20260101
+# POST http://localhost:3002/schedule/20260101
 # {"date": "20260101", "movies": ["720d006c-3a57-4b6a-b18f-9b713b073f3c"]}
 # git restore schedule/data/times.json
 @app.route("/schedule/<date>", methods=['POST'])
@@ -63,6 +70,14 @@ def add_schedule(date):
     req = request.get_json()
     if not req or "movies" not in req:
         return make_response(jsonify({"error": "invalid request body"}), 400)
+    # Vérification existence films
+    movies = fetch_movies()
+    for movie_id in req["movies"]:
+        if not any(movie["id"] == movie_id for movie in movies):
+            return make_response(
+                jsonify({"error": f"Movie {movie_id} not found"}),
+                400
+            )
     # Nouvelle séance
     new_schedule = {
         "date": date,
@@ -75,7 +90,7 @@ def add_schedule(date):
 
 
 # Route 5 : Supprimer une séance
-# http://localhost:3002/schedule/20151130
+# DELETE http://localhost:3002/schedule/20151130
 # git restore schedule/data/times.json
 @app.route("/schedule/<date>", methods=['DELETE'])
 def delete_schedule(date):
@@ -85,6 +100,27 @@ def delete_schedule(date):
             write(schedule)
             return make_response(jsonify(s), 200)
     return make_response(jsonify({"error": "no schedule found for this date"}), 404)
+
+
+# Additional endpoint number 3/3
+# Get schedules for a date with the movies details insted of their ids
+# http://localhost:3002/schedule/20151130/details
+@app.route("/schedule/<date>/details", methods=["GET"])
+def get_schedule_details(date):
+    for s in schedule:
+        if s["date"] == date:
+            result = {
+                "date": s["date"],
+                "movies": []
+            }
+            movies = fetch_movies()
+            for movie_id in s["movies"]:
+                for movie in movies:
+                    if movie["id"] == movie_id:
+                        result["movies"].append(movie)
+                        break
+            return make_response(jsonify(result), 200)
+    return make_response(jsonify({"error": "Schedule not found"}), 404)
 
 
 # Point d'entrée
