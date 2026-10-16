@@ -17,7 +17,7 @@ COPY booking.py /app
 COPY data/ /app/data/
 
 # Port
-EXPOSE 3002
+EXPOSE 3003
 
 # Commande d'exécution
 CMD ["python", "-u", "booking.py"]

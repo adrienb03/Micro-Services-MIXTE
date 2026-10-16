@@ -17,7 +17,7 @@ COPY movie.py /app
 COPY data/ /app/data/
 
 # Port
-EXPOSE 3002
+EXPOSE 3001
 
 # Commande d'exécution
 CMD ["python", "-u", "movie.py"]

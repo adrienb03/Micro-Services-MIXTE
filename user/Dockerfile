@@ -17,7 +17,7 @@ COPY user.py /app
 COPY data/ /app/data/
 
 # Port
-EXPOSE 3002
+EXPOSE 3004
 
 # Commande d'exécution
 CMD ["python", "-u", "user.py"]
