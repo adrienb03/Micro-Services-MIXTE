@@ -4,8 +4,8 @@ import os
 from pymongo import MongoClient
 
 # Connection Mongo
-client = MongoClient("mongodb://root:example@localhost:27017/")
-db = client.get_default_database()
+client = MongoClient("mongodb://localhost:27017/")
+db = client["TP-MIXTE"]
 
 # Fichiers Json à importer
 fichiers = [
