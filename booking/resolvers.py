@@ -5,6 +5,7 @@ import requests
 
 
 # RESOLVER 1 : Liste des réservations d'un utilisateur
+# query { get_bookings_by_userid(userid: "chris_rivers") { userid dates { date movies { title rating director } } } }
 def get_bookings_by_userid (_,info,userid):
     with open ('{}/data/bookings.json'.format("."), "r") as file:
         bookings = json.load(file)
@@ -15,6 +16,7 @@ def get_bookings_by_userid (_,info,userid):
 
 
 # RESOLVER 2 : Ajouter un film à une date pour un utilisateur
+# mutation { add_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid dates { date movies { id title rating } } } }
 def add_booking(_, info, userid, date, movieid):
     # Appel service REST
     schedule_url = os.environ.get("SCHEDULE_URL", "http://localhost:3002")
@@ -39,6 +41,7 @@ def add_booking(_, info, userid, date, movieid):
 
 
 # RESOLVER 3 : Supprimer un film d'une date pour un utilisateur
+# mutation { delete_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid } }
 def delete_booking(_, info, userid, date, movieid):
     # Chargement du fichier
     with open('{}/data/bookings.json'.format("."), "r") as file:
