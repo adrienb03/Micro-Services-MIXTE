@@ -1,25 +1,18 @@
-# Image python
-FROM python:3.11-slim
+FROM python:3.12-slim
+# can you find a lighter image?
 
-# Dossier de travail
 WORKDIR /app
 
-# Dépendances
-COPY requirements.txt /app
+# copy the requirements file in the workdir
+COPY requirements.txt .
 
-# Installation des dépendances
+# install the Python requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Code source
-COPY schedule.py /app
+# copy the app files and directories
+COPY . .
 
-# Fichiers de données
-COPY data/ /app/data/
-
-# Port
-EXPOSE 3002
-
-# Commande d'exécution
-CMD ["python", "-u", "schedule.py"]
+# start schedule.py when the container is started
+CMD ["python", "schedule.py"]
 
 

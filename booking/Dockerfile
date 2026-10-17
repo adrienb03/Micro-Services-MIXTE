@@ -1,25 +1,16 @@
-# Image python
-FROM python:3.11-slim
+FROM python:3.12-slim
+# can you find a lighter image?
 
-# Dossier de travail
 WORKDIR /app
 
-# Dépendances
-COPY requirements.txt /app
+# copy the requirements file in the workdir
+COPY requirements.txt .
 
-# Installation des dépendances
+# install the Python requirements
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Code source
-COPY booking.py /app
-COPY resolvers.py /app
-COPY booking.graphql /app
+# copy the app files and directories
+COPY . .
 
-# Fichiers de données
-COPY data/ /app/data/
-
-# Port
-EXPOSE 3003
-
-# Commande d'exécution
-CMD ["python", "-u", "booking.py"]
+# start booking.py when the container is started
+CMD ["python", "booking.py"]
