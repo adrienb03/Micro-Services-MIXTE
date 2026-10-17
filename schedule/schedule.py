@@ -4,6 +4,8 @@
 from flask import Flask, request, jsonify, make_response
 import json
 import requests
+import os
+from pymongo import MongoClient
 
 # Création de l'application Flask
 app = Flask(__name__)
@@ -12,16 +14,10 @@ app = Flask(__name__)
 PORT = 3002
 HOST = '0.0.0.0'
 
-# Chargement fichier json schedule
-with open('{}/data/times.json'.format("."), 'r') as f:
-   schedule = json.load(f)["schedule"]
-
-# Écriture fichier json schedule
-def write(schedule):
-    with open('{}/data/times.json'.format("."), 'w') as f:
-        full = {}
-        full['schedule'] = schedule
-        json.dump(full, f)
+# Connexion à MongoDB
+mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(mongo_uri)
+db = client["TP-MIXTE"]
 
 # Récupération des films
 def fetch_movies():
@@ -42,6 +38,7 @@ def home ():
 # http://localhost:3002/schedule
 @app.route("/schedule", methods=['GET'])
 def get_schedule ():
+   schedule = list(db.schedule.find({}, {"_id": 0}))
    res = make_response(jsonify(schedule), 200)
    return res
 
@@ -50,10 +47,10 @@ def get_schedule ():
 # http://localhost:3002/schedule/20151130
 @app.route("/schedule/<date>", methods=['GET'])
 def get_schedule_by_date (date):
-   for s in schedule:
-      if str(s["date"]) == str (date):
-         return make_response(jsonify(s),200)
-   return make_response (jsonify ({"error" : "no schedule found for this date"}), 404)
+   s = list(db.schedule.find({"date": date}, {"_id": 0}))
+   if s:
+      return make_response(jsonify(s), 200)
+   return make_response(jsonify({"error": "no schedule found for this date"}), 404)
 
 
 # Route 4 : Ajouter une séance
@@ -63,9 +60,9 @@ def get_schedule_by_date (date):
 @app.route("/schedule/<date>", methods=['POST'])
 def add_schedule(date):
     # Vérification existance date
-    for s in schedule:
-        if str(s["date"]) == str(date):
-            return make_response(jsonify({"error": "schedule already exists for this date"}), 409)      
+    existing_schedule = db.schedule.find_one({"date": date})
+    if existing_schedule:
+        return make_response(jsonify({"error": "schedule already exists for this date"}), 409)      
     # Vérification corps requête
     req = request.get_json()
     if not req or "movies" not in req:
@@ -83,9 +80,7 @@ def add_schedule(date):
         "date": date,
         "movies": req["movies"]
     }
-    # Résultat
-    schedule.append(new_schedule)
-    write(schedule)
+    db.schedule.insert_one(new_schedule)
     return make_response(jsonify(new_schedule), 201)      
 
 
@@ -94,11 +89,9 @@ def add_schedule(date):
 # git restore schedule/data/times.json
 @app.route("/schedule/<date>", methods=['DELETE'])
 def delete_schedule(date):
-    for s in schedule:
-        if str(s["date"]) == str(date):
-            schedule.remove(s)
-            write(schedule)
-            return make_response(jsonify(s), 200)
+    deleted = db.schedule.find_one_and_delete({"date": date}, projection={"_id": 0})
+    if deleted:
+        return make_response(jsonify(deleted), 200)
     return make_response(jsonify({"error": "no schedule found for this date"}), 404)
 
 
@@ -107,19 +100,19 @@ def delete_schedule(date):
 # http://localhost:3002/schedule/20151130/details
 @app.route("/schedule/<date>/details", methods=["GET"])
 def get_schedule_details(date):
-    for s in schedule:
-        if s["date"] == date:
-            result = {
-                "date": s["date"],
-                "movies": []
-            }
-            movies = fetch_movies()
-            for movie_id in s["movies"]:
-                for movie in movies:
-                    if movie["id"] == movie_id:
-                        result["movies"].append(movie)
-                        break
-            return make_response(jsonify(result), 200)
+    s = db.schedule.find_one({"date": date}, {"_id": 0})
+    if s:
+        result = {
+            "date": s["date"],
+            "movies": []
+        }
+        movies = fetch_movies()
+        for movie_id in s["movies"]:
+            for movie in movies:
+                if movie["id"] == movie_id:
+                    result["movies"].append(movie)
+                    break
+        return make_response(jsonify(result), 200)
     return make_response(jsonify({"error": "Schedule not found"}), 404)
 
 

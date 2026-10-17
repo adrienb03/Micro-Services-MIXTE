@@ -2,16 +2,20 @@
 import json 
 import os
 import requests
+from pymongo import MongoClient
+
+# Connexion à MongoDB
+mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
+client = MongoClient(mongo_uri)
+db = client["TP-MIXTE"]
 
 
 # RESOLVER 1 : Liste des réservations d'un utilisateur
 # query { get_bookings_by_userid(userid: "chris_rivers") { userid dates { date movies { title rating director } } } }
 def get_bookings_by_userid (_,info,userid):
-    with open ('{}/data/bookings.json'.format("."), "r") as file:
-        bookings = json.load(file)
-        for booking in bookings["bookings"]:
-            if str(booking["userid"])==str(userid):
-                return [booking]
+    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
+    if booking:
+        return [booking]
     return []
 
 
@@ -24,40 +28,38 @@ def add_booking(_, info, userid, date, movieid):
     if response.status_code != 200 or movieid not in response.json()["movies"]:
         return None
 
-    # Chargement du fichier
-    with open('{}/data/bookings.json'.format("."), "r") as file:
-        data = json.load(file)
-
     # Chercher l'utilisateur et la date
-    for booking in data["bookings"]:
-        if str(booking["userid"]) == str(userid):
-            for d in booking["dates"]:
-                if str(d["date"]) == str(date):
-                    d["movies"].append(movieid)
-                    with open('{}/data/bookings.json'.format("."), "w") as file:
-                        json.dump(data, file)
-                    return booking
+    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
+    if booking:
+        for d in booking["dates"]:
+            if str(d["date"]) == str(date):
+                d["movies"].append(movieid)
+                # Mettre à jour dans Mongo
+                db.bookings.update_one(
+                    {"userid": userid},
+                    {"$set": {"dates": booking["dates"]}}
+                )
+                return booking
     return None
 
 
 # RESOLVER 3 : Supprimer un film d'une date pour un utilisateur
 # mutation { delete_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid } }
 def delete_booking(_, info, userid, date, movieid):
-    # Chargement du fichier
-    with open('{}/data/bookings.json'.format("."), "r") as file:
-        data = json.load(file)
-
     # Chercher l'utilisateur et la date
-    for booking in data["bookings"]:
-        if str(booking["userid"]) == str(userid):
-            for d in booking["dates"]:
-                if str(d["date"]) == str(date):
-                    # Supprimer le film
-                    d["movies"].remove(movieid)
-                    with open('{}/data/bookings.json'.format("."), "w") as file:
-                        json.dump(data, file)
-                    return booking
-
+    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
+    if booking:
+        # Chercher la date
+        for d in booking["dates"]:
+            if str(d["date"]) == str(date):
+                # Supprimer le film
+                d["movies"].remove(movieid)
+                # Mettre à jour dans MongoDB
+                db.bookings.update_one(
+                    {"userid": userid},
+                    {"$set": {"dates": booking["dates"]}}
+                )
+                return booking
     return None
 
 
@@ -78,5 +80,4 @@ def resolve_movies(booking_date, info):
         # Ajout film aux résulats si trouvé 
         if movie:
             result.append(movie)
-    
     return result
