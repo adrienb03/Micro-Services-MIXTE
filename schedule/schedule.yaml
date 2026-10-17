@@ -1,0 +1,172 @@
+
+openapi: 3.0.3
+
+info:
+  title: Schedule Service API
+  description: REST API for managing movie schedules
+  version: 1.0.0
+
+servers:
+  - url: http://localhost:3002
+
+paths:
+  /schedule:
+    get:
+      summary: Get all schedules
+      operationId: getSchedules
+      responses:
+        '200':
+          description: List of schedules
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+
+  /schedule/{date}:
+    parameters:
+      - name: date
+        in: path
+        required: true
+        description: Schedule date in YYYYMMDD format
+        schema:
+          type: string
+          example: '20151201'
+
+    get:
+      summary: Get schedules by date
+      operationId: getScheduleByDate
+      responses:
+        '200':
+          description: Schedules found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Schedule'
+        '404':
+          description: No schedule found for this date
+
+    post:
+      summary: Add a new schedule
+      operationId: addSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - movies
+              properties:
+                movies:
+                  type: array
+                  items:
+                    type: string
+            example:
+              movies:
+                - 720d006c-3a57-4b6a-b18f-9b713b073f3c
+      responses:
+        '201':
+          description: Schedule created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '400':
+          description: Invalid request body or movie not found
+        '409':
+          description: Schedule already exists for this date
+
+    delete:
+      summary: Delete a schedule by date
+      operationId: deleteSchedule
+      responses:
+        '200':
+          description: Schedule deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Schedule'
+        '404':
+          description: No schedule found for this date
+
+  /schedule/{date}/details:
+    get:
+      summary: Get schedule with movie details
+      operationId: getScheduleDetails
+      parameters:
+        - name: date
+          in: path
+          required: true
+          description: Schedule date in YYYYMMDD format
+          schema:
+            type: string
+            example: '20151201'
+      responses:
+        '200':
+          description: Schedule with full movie information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleDetails'
+        '404':
+          description: Schedule not found
+
+components:
+  schemas:
+    Schedule:
+      type: object
+      required:
+        - date
+        - movies
+      properties:
+        date:
+          type: string
+          description: Schedule date in YYYYMMDD format
+          example: '20151201'
+        movies:
+          type: array
+          items:
+            type: string
+          example:
+            - 267eedb8-0f5d-42d5-8f43-72426b9fb3e6
+            - 7daf7208-be4d-4944-a3ae-c1c2f516f3e6
+
+    ScheduleDetails:
+      type: object
+      required:
+        - date
+        - movies
+      properties:
+        date:
+          type: string
+          example: '20151201'
+        movies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Movie'
+
+    Movie:
+      type: object
+      required:
+        - id
+        - title
+        - director
+        - rating
+      properties:
+        id:
+          type: string
+          example: 267eedb8-0f5d-42d5-8f43-72426b9fb3e6
+        title:
+          type: string
+          example: Creed
+        director:
+          type: string
+          example: Ryan Coogler
+        rating:
+          type: number
+          format: float
+          example: 8.8
