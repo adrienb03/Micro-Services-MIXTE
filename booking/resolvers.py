@@ -1,61 +1,79 @@
-# Imports
-import json 
-import os
 import requests
-from pymongo import MongoClient
+from database import bookings_collection
 
-# Connexion à MongoDB
-mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient(mongo_uri)
-db = client["TP-MIXTE"]
+MOVIE_URL = "http://movie:3001"
+SCHEDULE_URL = "http://schedule:3002"
 
 
-# RESOLVER 1 : Liste des réservations d'un utilisateur
-# query { get_bookings_by_userid(userid: "chris_rivers") { userid dates { date movies { title rating director } } } }
-def get_bookings_by_userid (_,info,userid):
-    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
-    if booking:
-        return [booking]
-    return []
+# RESOLVER 1 : Liste de toutes les réservations
+# query { get_bookings { userid dates { date movies { id title rating director } } } }
+def get_bookings(_, info):
+    return list(bookings_collection.find({}, {"_id": 0}))
 
 
-# RESOLVER 2 : Ajouter un film à une date pour un utilisateur
-# mutation { add_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid dates { date movies { id title rating } } } }
-def add_booking(_, info, userid, date, movieid):
-    # Appel service REST
-    schedule_url = os.environ.get("SCHEDULE_URL", "http://localhost:3002")
-    response = requests.get(schedule_url + "/schedule/" + date)
-    if response.status_code != 200 or movieid not in response.json()["movies"]:
+# RESOLVER 2 : Réservation d'un utilisateur
+# query { get_booking_by_id(userid: "chris_rivers") { userid dates { date movies { id title rating director } } } }
+def get_booking_by_id(_, info, userid):
+    return bookings_collection.find_one({"userid": userid}, {"_id": 0})
+
+
+# RESOLVER 3 : Ajouter une réservation pour un utilisateur
+# mutation { add_booking(userid: "john_doe", dates: [{date: "20151201", movies: ["267eedb8-0f5d-42d5-8f43-72426b9fb3e6"]}]) { userid dates { date movies { id title rating director } } } }
+def add_booking(_, info, userid, dates):
+    # Vérifier si l'utilisateur possède déjà des réservations
+    existing = bookings_collection.find_one({"userid": userid})
+    if existing:
         return None
 
-    # Chercher l'utilisateur et la date
-    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
+    # Vérifier que chaque film est programmé à la date demandée
+    for entry in dates:
+        date = entry["date"]
+
+        response = requests.get(
+            f"{SCHEDULE_URL}/schedule/{date}",
+            timeout=5
+        )
+        if response.status_code != 200:
+            return None
+
+        schedules = response.json()
+
+        for movieid in entry["movies"]:
+            if not any(movieid in s["movies"] for s in schedules):
+                return None
+
+    # Ajouter la réservation
+    booking = {
+        "userid": userid,
+        "dates": dates
+    }
+    bookings_collection.insert_one(booking.copy())
+    return booking
+
+
+# RESOLVER 4 : Supprimer les réservations d'un utilisateur
+# mutation { delete_booking(userid: "john_doe") { userid } }
+def delete_booking(_, info, userid):
+    return bookings_collection.find_one_and_delete(
+        {"userid": userid},
+        projection={"_id": 0}
+    )
+
+# RESOLVER 5 : Supprimer un film d'une réservation à une date donnée
+# mutation { delete_movie_from_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid dates { date movies { id title } } } }
+def delete_movie_from_booking(_, info, userid, date, movieid):
+    # Chercher la réservation de l'utilisateur
+    booking = bookings_collection.find_one({"userid": userid}, {"_id": 0})
+
     if booking:
         for d in booking["dates"]:
             if str(d["date"]) == str(date):
-                d["movies"].append(movieid)
-                # Mettre à jour dans Mongo
-                db.bookings.update_one(
-                    {"userid": userid},
-                    {"$set": {"dates": booking["dates"]}}
-                )
-                return booking
-    return None
-
-
-# RESOLVER 3 : Supprimer un film d'une date pour un utilisateur
-# mutation { delete_booking(userid: "chris_rivers", date: "20151201", movieid: "267eedb8-0f5d-42d5-8f43-72426b9fb3e6") { userid } }
-def delete_booking(_, info, userid, date, movieid):
-    # Chercher l'utilisateur et la date
-    booking = db.bookings.find_one({"userid": userid}, {"_id": 0})
-    if booking:
-        # Chercher la date
-        for d in booking["dates"]:
-            if str(d["date"]) == str(date):
+                if movieid not in d["movies"]:
+                    return None
                 # Supprimer le film
                 d["movies"].remove(movieid)
                 # Mettre à jour dans MongoDB
-                db.bookings.update_one(
+                bookings_collection.update_one(
                     {"userid": userid},
                     {"$set": {"dates": booking["dates"]}}
                 )
@@ -63,21 +81,35 @@ def delete_booking(_, info, userid, date, movieid):
     return None
 
 
-# RESOLVER 4 : Resolver imbriqué (informations des movies de Booking)
-# booking_date : { "date": "...", "movies": ["movieid1", "movieid2"] }
+# RESOLVER IMBRIQUÉ : Informations des films
+# Utilisé automatiquement lorsqu'une requête demande le champ movies de BookingDate
 def resolve_movies(booking_date, info):
-    # Url du service Movie
-    movie_url = os.environ.get("MOVIE_URL", "http://localhost:3001")
-    
-    # Boucle sur chaque film de Booking
     result = []
+
     for movieid in booking_date["movies"]:
-        # Communication avec Movie (HTTP POST GraphQL)
-        query = f'query {{ movie_with_id(_id: "{movieid}") {{ id title director rating }} }}'
-        response = requests.post(movie_url + "/graphql", json={"query": query})
+        query = """
+        query ($id: String!) {
+            movie_with_id(_id: $id) {
+                id
+                title
+                director
+                rating
+            }
+        }
+        """
+
+        response = requests.post(
+            f"{MOVIE_URL}/graphql",
+            json={
+                "query": query,
+                "variables": {"id": movieid}
+            },
+            timeout=5
+        )
+        response.raise_for_status()
         movie = response.json()["data"]["movie_with_id"]
-        
-        # Ajout film aux résulats si trouvé 
+
         if movie:
             result.append(movie)
+
     return result
