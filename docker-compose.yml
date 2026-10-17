@@ -13,6 +13,12 @@ services:
     build: ./booking/
     ports:
       - "3003:3003"
+    depends_on:
+    - movie
+    - schedule
+    environment:
+    - MOVIE_URL=http://movie:3001
+    - SCHEDULE_URL=http://schedule:3002
 
   user:
     build: ./user/
