@@ -38,7 +38,6 @@ def add_booking(_, info, userid, date, movieid):
     return None
 
 
-
 # RESOLVER 3 : Supprimer un film d'une date pour un utilisateur
 def delete_booking(_, info, userid, date, movieid):
     # Chargement du fichier
@@ -57,3 +56,24 @@ def delete_booking(_, info, userid, date, movieid):
                     return booking
 
     return None
+
+
+# RESOLVER 4 : Resolver imbriqué (informations des movies de Booking)
+# booking_date : { "date": "...", "movies": ["movieid1", "movieid2"] }
+def resolve_movies(booking_date, info):
+    # Url du service Movie
+    movie_url = os.environ.get("MOVIE_URL", "http://localhost:3001")
+    
+    # Boucle sur chaque film de Booking
+    result = []
+    for movieid in booking_date["movies"]:
+        # Communication avec Movie (HTTP POST GraphQL)
+        query = f'query {{ movie_with_id(_id: "{movieid}") {{ id title director rating }} }}'
+        response = requests.post(movie_url + "/graphql", json={"query": query})
+        movie = response.json()["data"]["movie_with_id"]
+        
+        # Ajout film aux résulats si trouvé 
+        if movie:
+            result.append(movie)
+    
+    return result
