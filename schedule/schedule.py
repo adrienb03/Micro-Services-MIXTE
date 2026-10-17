@@ -72,7 +72,7 @@ def add_schedule(date):
         "date": date,
         "movies": req["movies"]
     }
-    schedule_collection.insert_one(new_schedule.copy)
+    schedule_collection.insert_one(new_schedule.copy())
     return make_response(jsonify(new_schedule), 201)      
 
 
