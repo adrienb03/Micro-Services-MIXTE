@@ -2,10 +2,8 @@
 
 # Imports
 from flask import Flask, request, jsonify, make_response
-import json
 import requests
-import os
-from pymongo import MongoClient
+from database import schedule_collection, init_database
 
 # Création de l'application Flask
 app = Flask(__name__)
@@ -13,11 +11,6 @@ app = Flask(__name__)
 # Serveur
 PORT = 3002
 HOST = '0.0.0.0'
-
-# Connexion à MongoDB
-mongo_uri = os.environ.get("MONGO_URI", "mongodb://localhost:27017/")
-client = MongoClient(mongo_uri)
-db = client["TP-MIXTE"]
 
 # Récupération des films
 def fetch_movies():
@@ -38,7 +31,7 @@ def home ():
 # http://localhost:3002/schedule
 @app.route("/schedule", methods=['GET'])
 def get_schedule ():
-   schedule = list(db.schedule.find({}, {"_id": 0}))
+   schedule = list(schedule_collection.find({}, {"_id": 0}))
    res = make_response(jsonify(schedule), 200)
    return res
 
@@ -47,7 +40,7 @@ def get_schedule ():
 # http://localhost:3002/schedule/20151130
 @app.route("/schedule/<date>", methods=['GET'])
 def get_schedule_by_date (date):
-   s = list(db.schedule.find({"date": date}, {"_id": 0}))
+   s = list(schedule_collection.find({"date": date}, {"_id": 0}))
    if s:
       return make_response(jsonify(s), 200)
    return make_response(jsonify({"error": "no schedule found for this date"}), 404)
@@ -56,11 +49,10 @@ def get_schedule_by_date (date):
 # Route 4 : Ajouter une séance
 # POST http://localhost:3002/schedule/20260101
 # {"date": "20260101", "movies": ["720d006c-3a57-4b6a-b18f-9b713b073f3c"]}
-# git restore schedule/data/times.json
 @app.route("/schedule/<date>", methods=['POST'])
 def add_schedule(date):
     # Vérification existance date
-    existing_schedule = db.schedule.find_one({"date": date})
+    existing_schedule = schedule_collection.find_one({"date": date})
     if existing_schedule:
         return make_response(jsonify({"error": "schedule already exists for this date"}), 409)      
     # Vérification corps requête
@@ -80,27 +72,25 @@ def add_schedule(date):
         "date": date,
         "movies": req["movies"]
     }
-    db.schedule.insert_one(new_schedule)
+    schedule_collection.insert_one(new_schedule.copy)
     return make_response(jsonify(new_schedule), 201)      
 
 
 # Route 5 : Supprimer une séance
 # DELETE http://localhost:3002/schedule/20151130
-# git restore schedule/data/times.json
 @app.route("/schedule/<date>", methods=['DELETE'])
 def delete_schedule(date):
-    deleted = db.schedule.find_one_and_delete({"date": date}, projection={"_id": 0})
+    deleted = schedule_collection.find_one_and_delete({"date": date}, projection={"_id": 0})
     if deleted:
         return make_response(jsonify(deleted), 200)
     return make_response(jsonify({"error": "no schedule found for this date"}), 404)
 
 
-# Additional endpoint number 3/3
 # Get schedules for a date with the movies details insted of their ids
 # http://localhost:3002/schedule/20151130/details
 @app.route("/schedule/<date>/details", methods=["GET"])
 def get_schedule_details(date):
-    s = db.schedule.find_one({"date": date}, {"_id": 0})
+    s = schedule_collection.find_one({"date": date}, {"_id": 0})
     if s:
         result = {
             "date": s["date"],
@@ -118,5 +108,8 @@ def get_schedule_details(date):
 
 # Point d'entrée
 if __name__ == "__main__":
+   # Initialisation de la base de données avec des données d'exemple si elle est vide
+   init_database()
+
    print("Server running in port %s"%(PORT))
    app.run(host=HOST, port=PORT)

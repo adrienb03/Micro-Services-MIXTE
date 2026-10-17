@@ -1,7 +1,7 @@
 from ariadne import graphql_sync, make_executable_schema, load_schema_from_path, ObjectType, QueryType, MutationType
 from flask import Flask, request, jsonify, make_response
-
 import resolvers as r
+from database import init_database
 
 PORT = 3001
 HOST = '0.0.0.0'
@@ -40,5 +40,8 @@ def graphql_server():
     return jsonify(result), status_code
 
 if __name__ == "__main__":
+    # Initialize the database with sample data if empty
+    init_database()
+    
     print("Server running in port %s"%(PORT))
     app.run(host=HOST, port=PORT)
