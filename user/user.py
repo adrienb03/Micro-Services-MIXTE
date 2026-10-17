@@ -60,7 +60,7 @@ def add_user():
     if existing:
          return make_response(jsonify({"error": "user already exists"}), 409)
     # Ajout de l'utilisateur à la liste
-    db.users.nsert_one(req)
+    db.users.insert_one(req)
     return make_response(jsonify(req), 201)
 
 
