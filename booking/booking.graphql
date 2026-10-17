@@ -1,20 +1,27 @@
 type Query {
-    get_bookings_by_userid(userid: String!): [Booking]
+    get_bookings: [Booking!]!
+    get_booking_by_id(userid: String!): Booking
 }
 
 type Mutation {
-    add_booking(userid: String!, date: String!, movieid: String!): Booking
-    delete_booking(userid: String!, date: String!, movieid: String!): Booking
+    add_booking(userid: String!, dates: [BookingDateInput!]!): Booking
+    delete_booking(userid: String!): Booking
+    delete_movie_from_booking(userid: String!, date: String!, movieid: String!): Booking
 }
 
 type Booking {
     userid: String!
-    dates: [BookingDate]
+    dates: [BookingDate!]!
 }
 
 type BookingDate {
     date: String!
-    movies: [Movie]
+    movies: [Movie!]!
+}
+
+input BookingDateInput {
+    date: String!
+    movies: [String!]!
 }
 
 type Movie {
@@ -23,5 +30,3 @@ type Movie {
     director: String!
     rating: Float!
 }
-
-
