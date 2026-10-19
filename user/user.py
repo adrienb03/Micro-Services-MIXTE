@@ -1,4 +1,5 @@
-# IMPLÉMENTATION EN REST
+# SERVICE USER
+# Chaque utilisateur a un ID, un nom et une date de dernière activité
 
 # Imports 
 from flask import Flask, request, jsonify, make_response

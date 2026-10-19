@@ -1,6 +1,10 @@
+# RESOLVERS SERVICE BOOKING
+
+# Imports
 import requests
 from database import bookings_collection
 
+# Constantes URL
 MOVIE_URL = "http://movie:3001"
 SCHEDULE_URL = "http://schedule:3002"
 

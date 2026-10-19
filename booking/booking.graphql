@@ -1,3 +1,5 @@
+# Schéma GRAPHQL pour le service Booking
+
 type Query {
     get_bookings: [Booking!]!
     get_booking_by_id(userid: String!): Booking

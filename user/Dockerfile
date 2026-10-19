@@ -1,16 +1,19 @@
-FROM python:3.12-slim
-# can you find a lighter image?
+# Dockerfile pour le service user
 
+# Utilisation image Python 3.12 slim comme base
+FROM python:3.12-slim
+
+# Installation dépenances
 WORKDIR /app
 
-# copy the requirements file in the workdir
+# Copie du fichier requirements.txt dans le conteneur
 COPY requirements.txt .
 
-# install the Python requirements
+# Installation dépendances Python
 RUN pip install --no-cache-dir -r requirements.txt
 
-# copy the app files and directories
+# Copie code source dans le conteneur
 COPY . .
 
-# start user.py when the container is started
+# Éxécution service user
 CMD ["python", "user.py"]

@@ -1,4 +1,5 @@
-# IMPLÉMENTATION EN REST
+# SERVICE SCHEDULE
+# Chaque date a un ID, une date et une liste de films
 
 # Imports
 from flask import Flask, request, jsonify, make_response
@@ -86,7 +87,7 @@ def delete_schedule(date):
     return make_response(jsonify({"error": "no schedule found for this date"}), 404)
 
 
-# Get schedules for a date with the movies details insted of their ids
+# Route 6 : Détails d'une séance avec les informations des films
 # http://localhost:3002/schedule/20151130/details
 @app.route("/schedule/<date>/details", methods=["GET"])
 def get_schedule_details(date):
@@ -106,9 +107,9 @@ def get_schedule_details(date):
     return make_response(jsonify({"error": "Schedule not found"}), 404)
 
 
-# Point d'entrée
+# Lancement du serveur Flask
 if __name__ == "__main__":
-   # Initialisation de la base de données avec des données d'exemple si elle est vide
+   # Initialisation BDD si nécessaire
    init_database()
 
    print("Server running in port %s"%(PORT))

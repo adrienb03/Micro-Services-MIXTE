@@ -31,13 +31,13 @@ booking_date.set_field('movies', r.resolve_movies)
 schema = make_executable_schema(type_defs, query, mutation, booking_date)
 
 
-# Root message
+# ROUTE 0 - Accueil
 @app.route("/", methods=['GET'])
 def home():
     return make_response("<h1 style='color:blue'>Welcome to the Booking service!</h1>", 200)
 
 
-# GraphQL entry point
+# ROUTE 1 - Envoi de requêtes GraphQL au serveur
 @app.route('/graphql', methods=['POST'])
 def graphql_server():
     data = request.get_json()
@@ -53,8 +53,7 @@ def graphql_server():
 
 # Démarrage serveur
 if __name__ == "__main__":
-    # Initialisation de la base de données avec des données d'exemple si elle est vide
+    # Initialisation de la base de données
     init_database()
-
     print("Server running in port %s" % PORT)
     app.run(host=HOST, port=PORT)
