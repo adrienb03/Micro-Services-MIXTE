@@ -1,0 +1,31 @@
+1. Service Movie
+
+http://localhost:3001/graphql
+
+Lister films — query { get_movies { id title rating } }
+
+Ajouter film — mutation { add_movie(movie: {id: "test_id", title: "Nouveau Film", director: "Moi", rating: 5.0}) { id title } }
+
+Lister films — query { get_movies { id title rating } }
+
+Modifier note — mutation { update_movie_rate(_id: "test_id", _rate: 9.0) { title rating } }
+
+Supprimer film — mutation { delete_movie(_id: "test_id") { title } }
+
+Lister films — query { get_movies { id title rating } }
+
+
+
+2. Service User
+
+http://localhost:3004
+
+Liste utilisateurs (GET) — http://localhost:3004/users
+
+Ajout utilisateur (POST) — http://localhost:3004/users {"id": "test_user", "name": "Utilisateur Test", "last_active": 1234567890}
+
+Liste utilisateurs (GET) — http://localhost:3004/users
+
+Supprimer utilisateur (DELETE) — http://localhost:3004/users/test_user
+
+Liste utilisateurs (GET) — http://localhost:3004/users
