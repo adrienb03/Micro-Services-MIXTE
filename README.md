@@ -67,3 +67,7 @@ http://localhost:8081
 - MongoDB
 - Docker
 - Docker Compose
+
+## Insomnia tests
+
+Insomnia tests are available on README_Insomnia_Tests.md at the project root.
