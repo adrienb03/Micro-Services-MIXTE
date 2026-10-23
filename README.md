@@ -70,4 +70,4 @@ http://localhost:8081
 
 ## Insomnia tests
 
-Insomnia tests are available on README_Insomnia_Tests.md at the project root.
+You can import requests on Insomnia. The file to import is: Insomnia_EXPORT_tests.yaml from the project root directory.
